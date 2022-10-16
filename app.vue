@@ -1,20 +1,7 @@
 <script setup lang="ts">
-enum Gender {
-  GIRL = "Girl",
-  BOY = "Boy",
-  UNISEX = "Unisex",
-}
-
-enum Popularity {
-  TRENDY = "Trendy",
-  UNIQUE = "Unique",
-}
-
-enum Length {
-  SHORT = "Short",
-  LONG = "Long",
-  ALL = "All",
-}
+import { Gender, Length, names, Popularity } from "@/data";
+import { reactive } from "vue";
+import { filter } from "rxjs";
 
 interface OptionState {
   gender: Gender;
@@ -22,13 +9,48 @@ interface OptionState {
   length: Length;
 }
 
-import { reactive } from "vue";
-
 const options = reactive<OptionState>({
   gender: Gender.GIRL,
   length: Length.LONG,
   popularity: Popularity.UNIQUE,
 });
+
+const removeName = (idx: number) => {
+  const filteredNames = [...selectedNames.value];
+  filteredNames.splice(idx, 1);
+  selectedNames.value = filteredNames;
+};
+
+const selectedNames = ref<string[]>([]);
+
+const computeSelectedNames = () => {
+  const filteredNames = names
+    .filter((name) => name.gender === options.gender)
+    .filter((name) => name.popularity === options.popularity)
+    .filter((name) => {
+      if (options.length === Length.ALL) return true;
+      else return name.length === options.length;
+    });
+  selectedNames.value = filteredNames.map((name) => name.name);
+};
+
+const optionsArray = [
+  {
+    title: "1) Choose a gender",
+    category: "gender",
+    buttons: [Gender.GIRL, Gender.UNISEX, Gender.BOY],
+  },
+  {
+    title: "2) Choose the name's popularity",
+    category: "popularity",
+    buttons: [Popularity.TRENDY, Popularity.UNIQUE],
+  },
+  {
+    title: "3) Choose name's length",
+    category: "length",
+    buttons: [Length.SHORT, Length.ALL, Length.LONG],
+  },
+];
 </script>
 
 <template>
@@ -36,77 +58,22 @@ const options = reactive<OptionState>({
     <h1>Baby name generator</h1>
     <p>Choose your options and click the FInd names button below</p>
     <div class="options-container">
-      <div class="option-container">
-        <h4>1) choose a gender</h4>
-        <div class="option-buttons">
-          <button
-            class="option option-left"
-            :class="options.gender === Gender.BOY && 'option-active'"
-            @click="options.gender = Gender.BOY"
-          >
-            Boy
-          </button>
-          <button
-            class="option"
-            :class="options.gender === 'Girl' && 'option-active'"
-            @click="options.gender = Gender.GIRL"
-          >
-            Girl
-          </button>
-          <button
-            class="option option-right"
-            :class="options.gender === 'Unisex' && 'option-active'"
-            @click="options.gender = Gender.UNISEX"
-          >
-            Unisex
-          </button>
-        </div>
-      </div>
-      <div class="option-container">
-        <h4>2) choose the names popularity</h4>
-        <div class="option-buttons">
-          <button
-            class="option option-left"
-            :class="options.popularity === 'Trendy' && 'option-active'"
-            @click="options.popularity = Popularity.TRENDY"
-          >
-            trendy
-          </button>
-          <button
-            class="option option-right"
-            :class="options.popularity === 'Unique' && 'option-active'"
-            @click="options.popularity = Popularity.UNIQUE"
-          >
-            unique
-          </button>
-        </div>
-      </div>
-      <div class="option-container">
-        <h4>3) choose a the length of the name</h4>
-        <div class="option-buttons">
-          <button
-            class="option option-left"
-            :class="options.length === 'Long' && 'option-active'"
-            @click="options.length = Length.LONG"
-          >
-            long
-          </button>
-          <button
-            class="option"
-            :class="options.length === 'All' && 'option-active'"
-            @click="options.length = Length.ALL"
-          >
-            all
-          </button>
-          <button
-            class="option option-right"
-            :class="options.length === 'Short' && 'option-active'"
-            @click="options.length = Length.SHORT"
-          >
-            short
-          </button>
-        </div>
-      </div>
+      <Option
+        v-for="option in optionsArray"
+        :key="option.title"
+        :option="option"
+        :options="options"
+      />
+      <button class="primary" @click="computeSelectedNames">Find Names</button>
+    </div>
+    <div class="cards-container">
+      <CardName
+        v-for="(name, idx) in selectedNames"
+        :key="name"
+        :name="name"
+        @remove="() => removeName(idx)"
+        :idx="idx"
+      />
     </div>
   </div>
 </template>
@@ -137,29 +104,20 @@ h4 {
   text-align: center;
   position: relative;
 }
-.option-container {
-  margin-bottom: 2rem;
-}
-.option {
-  background-color: white;
-  outline: 0.15rem solid rgb(249, 87, 89);
-  border: none;
-  padding: 0.75rem;
 
-  width: 12rem;
-  font-size: 1rem;
-  color: rgb(27, 60, 138);
-  cursor: pointer;
-  font-weight: 600;
-}
-.option-left {
-  border-radius: 1rem 0 0 1rem;
-}
-.option-right {
-  border-radius: 0 1rem 1rem 0;
-}
-.option-active {
+.primary {
   background-color: rgb(249, 87, 89);
   color: white;
+  border-radius: 6.5rem;
+  border: none;
+  padding: 0.75rem 4rem;
+  font-size: 1rem;
+  margin-top: 1rem;
+  cursor: pointer;
+}
+.cards-container {
+  display: flex;
+  margin-top: 3rem;
+  flex-wrap: wrap;
 }
 </style>
