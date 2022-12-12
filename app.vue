@@ -6,7 +6,7 @@ import { filter } from "rxjs";
 interface OptionState {
   gender: Gender;
   popularity: Popularity;
-  length: Length;
+  length: Length111;
 }
 
 const options = reactive<OptionState>({
